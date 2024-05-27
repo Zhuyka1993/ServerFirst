@@ -3,11 +3,16 @@ import express from "express";
 //імпорт бази даних з файлу дб.джс
 import db from "./db.js";
 import Product from "./models/Product.js";
+//--------
+import cors from "cors";
 
 import bodyParser from "body-parser";
 
 // Створюємо екземпляр нашого сервера
 const app = express();
+//-----
+app.use(cors());
+app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 const port = 3000; // Визначаємо порт, на якому буде працювати сервер
@@ -25,6 +30,7 @@ app.post("/products", (req, res) => {
     price: req.body.price,
     description: req.body.description, // Додаємо опис
     image: req.body.image, // Додаємо зображення
+    type: req.body.type,
   });
 
   product.save().then((data) => {
@@ -66,6 +72,7 @@ app.put("/products/:id", async (req, res) => {
     price: req.body.price,
     description: req.body.description,
     image: req.body.image,
+    type: req.body.type,
   };
 
   try {
@@ -76,11 +83,6 @@ app.put("/products/:id", async (req, res) => {
     res.status(500).send("Error updating product");
   }
 });
-
-// // Роут для сторінки "Контакти"
-// app.get("/contact", (req, res) => {
-//   res.send("Спілкуйтеся з нами там");
-// });
 
 // Слухаємо сервер на визначеному порті
 app.listen(port, () => {
