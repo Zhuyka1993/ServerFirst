@@ -1,53 +1,93 @@
+//містить код для визначення маршрутів Express, які обробляють запити до MALTеR API
+
 // Підключаємо express
 import express from "express";
-//імпорт бази даних з файлу дб.джс
+// Імпорт бази даних з файлу db.js
 import db from "./db.js";
 import Product from "./models/Product.js";
+import multer from "multer";
 //--------
 import cors from "cors";
-
+import mongoose from "mongoose";
 import bodyParser from "body-parser";
 
 // Створюємо екземпляр нашого сервера
 const app = express();
-//-----
+const port = 3000; // Визначаємо порт, на якому буде працювати сервер
+
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-const port = 3000; // Визначаємо порт, на якому буде працювати сервер
 
-// // Роут для головної сторінки
-// app.get("/", (req, res) => {
-//   res.send("Привіт, світ!");
+// Налаштування multer для зберігання зображень
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "./upload");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// Підключення до бази даних
+// mongoose
+//   .connect(db, { useNewUrlParser: true, useUnifiedTopology: true })
+//   .then(() => console.log("Database connected successfully"))
+//   .catch((error) => {
+//     console.error("Database connection error:", error);
+//     process.exit(1); // Завершити процес, якщо підключення не вдалося
+//   });
+
+// Обслуговування статичних файлів
+// app.use("/uploads", express.static("uploads"));
+
+// Маршрут для завантаження файлів і створення продукту
+// app.post("/upload", upload.single("image"), async (req, res) => {
+//   try {
+//     const newProduct = new Product({
+//       title: req.body.title,
+//       price: req.body.price,
+//       description: req.body.description,
+//       image: req.file ? req.file.path : null,
+//       type: req.body.type,
+//     });
+
+//     await newProduct.save();
+//     res.status(201).json(newProduct);
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
 // });
 
-// Роут для продуктів
-app.post("/products", (req, res) => {
-  const product = new Product({
-    id: req.body.id,
-    title: req.body.title,
-    price: req.body.price,
-    description: req.body.description, // Додаємо опис
-    image: req.body.image, // Додаємо зображення
-    type: req.body.type,
-  });
+// Роут для створення продуктів без зображення
+app.post("/products", upload.single("image"), async (req, res) => {
+  try {
+    const newProduct = new Product({
+      title: req.body.title,
+      price: req.body.price,
+      description: req.body.description,
+      image: req.file ? req.file.path : "",
+      type: req.body.type,
+    });
 
-  product.save().then((data) => {
-    res.send("Saved to DB");
-  });
+    await newProduct.save();
+    res.status(201).json(newProduct);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 // Роут для отримання продуктів
-app.get("/products", (req, res) => {
-  // Отримати дані продуктів з бази даних або іншого джерела
-  Product.find({})
-    .then((products) => {
-      res.send(products);
-    })
-    .catch((err) => {
-      res.status(500).send("Помилка отримання даних про продукти");
-    });
+app.get("/products", async (req, res) => {
+  try {
+    const products = await Product.find({});
+    res.send(products);
+  } catch (err) {
+    res.status(500).send("Помилка отримання даних про продукти");
+  }
 });
 
 // Роут для видалення продукта
@@ -60,11 +100,11 @@ app.delete("/products/:id", async (req, res) => {
     res.send("Product deleted successfully");
   } catch (err) {
     console.error("Error deleting product:", err);
-    res.status(500).send("Error deleting product500");
+    res.status(500).send("Error deleting product");
   }
 });
 
-// PUT /products/:id - Обновление продукта, rout
+// PUT /products/:id - Обновление продукта
 app.put("/products/:id", async (req, res) => {
   const productId = req.params.id;
   const updatedProduct = {
@@ -76,7 +116,9 @@ app.put("/products/:id", async (req, res) => {
   };
 
   try {
-    await Product.findByIdAndUpdate(productId, updatedProduct);
+    await Product.findByIdAndUpdate(productId, updatedProduct, {
+      runValidators: true,
+    });
     res.send("Product updated successfully");
   } catch (err) {
     console.error("Error updating product:", err);

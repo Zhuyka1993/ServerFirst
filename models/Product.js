@@ -1,3 +1,5 @@
+//містить визначення схеми MongoDB для зберігання даних про маршрути.
+
 import mongoose from "mongoose";
 
 // Визначення схеми даних для моделі Product
@@ -9,8 +11,8 @@ const productSchema = new mongoose.Schema({
   },
   price: Number,
   description: String, // Опис може бути необов'язковим
-  //image: String, // Шлях до картинки може бути необов'язковим
   type: String,
+  image: String, // Шлях до картинки може бути необов'язковим
 });
 
 // Створення моделі на основі схеми
