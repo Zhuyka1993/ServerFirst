@@ -32,35 +32,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Підключення до бази даних
-// mongoose
-//   .connect(db, { useNewUrlParser: true, useUnifiedTopology: true })
-//   .then(() => console.log("Database connected successfully"))
-//   .catch((error) => {
-//     console.error("Database connection error:", error);
-//     process.exit(1); // Завершити процес, якщо підключення не вдалося
-//   });
-
-// Обслуговування статичних файлів
-// app.use("/uploads", express.static("uploads"));
-
-// Маршрут для завантаження файлів і створення продукту
-// app.post("/upload", upload.single("image"), async (req, res) => {
-//   try {
-//     const newProduct = new Product({
-//       title: req.body.title,
-//       price: req.body.price,
-//       description: req.body.description,
-//       image: req.file ? req.file.path : null,
-//       type: req.body.type,
-//     });
-
-//     await newProduct.save();
-//     res.status(201).json(newProduct);
-//   } catch (error) {
-//     res.status(400).json({ error: error.message });
-//   }
-// });
+// Обслуговування статичних файлів ОБОВ'ЯЗКОВО!!!!!!!!!!!!!!!!!!!!
+app.use("/upload", express.static("upload"));
 
 // Роут для створення продуктів без зображення
 app.post("/products", upload.single("image"), async (req, res) => {
@@ -69,6 +42,7 @@ app.post("/products", upload.single("image"), async (req, res) => {
       title: req.body.title,
       price: req.body.price,
       description: req.body.description,
+      //image: imagePath,
       image: req.file ? req.file.path : "",
       type: req.body.type,
     });
@@ -104,7 +78,7 @@ app.delete("/products/:id", async (req, res) => {
   }
 });
 
-// PUT /products/:id - Обновление продукта
+// PUT /products/:id - Обновлення продукту
 app.put("/products/:id", async (req, res) => {
   const productId = req.params.id;
   const updatedProduct = {
