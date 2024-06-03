@@ -1,12 +1,8 @@
-//містить код для визначення маршрутів Express, які обробляють запити до MALTеR API
-
 // Підключаємо express
 import express from "express";
-// Імпорт бази даних з файлу db.js
 import db from "./db.js";
 import Product from "./models/Product.js";
 import multer from "multer";
-//--------
 import cors from "cors";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
@@ -35,15 +31,17 @@ const upload = multer({ storage: storage });
 // Обслуговування статичних файлів ОБОВ'ЯЗКОВО!!!!!!!!!!!!!!!!!!!!
 app.use("/upload", express.static("upload"));
 
-// Роут для створення продуктів без зображення
+// Роут для створення продуктів
 app.post("/products", upload.single("image"), async (req, res) => {
   try {
+    //Заміна зворотних слешів перед збереженням у базу даних
+
+    const imagePath = req.file ? req.file.path.replace(/\\/g, "/") : "";
     const newProduct = new Product({
       title: req.body.title,
       price: req.body.price,
       description: req.body.description,
-      //image: imagePath,
-      image: req.file ? req.file.path : "",
+      image: imagePath,
       type: req.body.type,
     });
 
@@ -54,7 +52,7 @@ app.post("/products", upload.single("image"), async (req, res) => {
   }
 });
 
-// Роут для отримання продуктів
+// Роут для отримання продуктів з бд
 app.get("/products", async (req, res) => {
   try {
     const products = await Product.find({});
@@ -79,20 +77,26 @@ app.delete("/products/:id", async (req, res) => {
 });
 
 // PUT /products/:id - Обновлення продукту
-app.put("/products/:id", async (req, res) => {
+app.patch("/products/:id", upload.single("image"), async (req, res) => {
+  console.log(req.body);
   const productId = req.params.id;
   const updatedProduct = {
     title: req.body.title,
     price: req.body.price,
     description: req.body.description,
-    image: req.body.image,
+    //Заміна зворотних слешів перед збереженням у базу даних
+    image: req.file ? req.file.path.replace(/\\/g, "/") : req.body.image,
     type: req.body.type,
   };
 
   try {
-    await Product.findByIdAndUpdate(productId, updatedProduct, {
+    const result = await Product.findByIdAndUpdate(productId, updatedProduct, {
+      new: true,
       runValidators: true,
     });
+    if (!result) {
+      return res.status(404).send("Product not found");
+    }
     res.send("Product updated successfully");
   } catch (err) {
     console.error("Error updating product:", err);
